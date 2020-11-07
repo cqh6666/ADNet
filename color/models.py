@@ -1,13 +1,17 @@
 import torch
 import torch.nn as nn
+# 调用神经网络比较火的pytorch包
 
 class Conv_BN_Relu_first(nn.Module):
+    """nn.Module 一般继承这样的类"""
     def __init__(self,in_channels,out_channels,kernel_size,padding,groups,bias):
+	# 卷积核为3，中间channels为64
         super(Conv_BN_Relu_first,self).__init__()
         kernel_size = 3
         padding = 1
         features = 64
         groups =1 
+	# 卷积+标准化+激活函数Relu
         self.conv = nn.Conv2d(in_channels=channels, out_channels=features, kernel_size=kernel_size, padding=padding,groups=groups, bias=False)
         self.bn = nn.BatchNorm2d(features)
         self.relu = nn.ReLU(inplace=True)
