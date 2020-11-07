@@ -33,6 +33,7 @@ class Conv_BN_Relu_other(nn.Module):
 
 
 class Conv(nn.Module):
+    """卷积，输出层为1维"""
     def __init__(self,in_channels,out_channels,kernel_size,padding,groups,bais):
         super(Conv,self).__init__()
         kernel_size = 3
@@ -67,6 +68,17 @@ class Self_Attn(nn.Module):
         return out, attention
 
 class ADNet(nn.Module):
+    """
+    input_size [3,c,c]
+    卷积核 3x3
+    
+    SB
+    1,3,4,6,7,8,10,11 Conv + BN + ReLu
+    2,5,9，12 空洞卷积+Conv + BN + ReLu
+    FEB
+    AB
+    RB
+    """
     def __init__(self, channels, num_of_layers=15):
         super(ADNet, self).__init__()
         kernel_size = 3
