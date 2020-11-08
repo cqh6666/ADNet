@@ -70,14 +70,17 @@ class Self_Attn(nn.Module):
 class ADNet(nn.Module):
     """
     input_size [3,c,c]
-    卷积核 3x3
     
-    SB
+    SB 稀疏矩阵
     1,3,4,6,7,8,10,11 Conv + BN + ReLu
     2,5,9，12 空洞卷积+Conv + BN + ReLu
-    FEB
-    AB
-    RB
+    FEB 特征增强块
+    13-16层 Conv + BN + ReLu 
+    最后一层卷积结果的channels = 3
+    AB Attention机制
+    先卷积后相乘提取更多噪声特征
+    RB 重构块
+    利用残差图像与噪声图像获得干净图像
     """
     def __init__(self, channels, num_of_layers=15):
         super(ADNet, self).__init__()
@@ -107,6 +110,7 @@ class ADNet(nn.Module):
         self.ReLU = nn.ReLU(inplace=True)
         self.Tanh= nn.Tanh()
         self.sigmoid = nn.Sigmoid()
+	# 对模型参数的初始化
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 # n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
@@ -121,11 +125,13 @@ class ADNet(nn.Module):
                     elif m.weight.data[j] > -clip_b and m.weight.data[j] < 0:
                         m.weight.data[j] = -clip_b
                 m.running_var.fill_(0.01)
+    # 保存每一层的参数
     def _make_layers(self, block,features, kernel_size, num_of_layers, padding=1, groups=1, bias=False):
 	layers = []
         for _ in range(num_of_layers):
             layers.append(block(in_channels=features, out_channels=features, kernel_size=kernel_size, padding=padding, groups=groups, bias=bias))
         return nn.Sequential(*layers)
+    # 16层的网络+AB+RB
     def forward(self, x):
         input = x 
         x1 = self.conv1_1(x)
@@ -144,6 +150,8 @@ class ADNet(nn.Module):
         x1 = self.conv1_14(x1)
         x1 = self.conv1_15(x1)
         x1 = self.conv1_16(x1)
+	# 卷积了16层之后，将获得的矩阵和原来的图像矩阵进行列合并，激活函数非线性化后，通过卷积变化为图像维度的向量，乘上16层的输出提取更多噪声特征。
+	# 前面的步骤是为了预测 噪声映射 。 相减相当于去掉噪声获得原图像。 
         out = torch.cat([x,x1],1)
         out= self.Tanh(out)
         out = self.conv3(out)
