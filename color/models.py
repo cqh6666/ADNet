@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-# 调用神经网络比较火的pytorch包
+# 调用神经网络的pytorch包
 
 class Conv_BN_Relu_first(nn.Module):
     """nn.Module 一般继承这样的类"""
